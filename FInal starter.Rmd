@@ -13,21 +13,29 @@ library(tidyr)
 ```
 
 ``` {r}
-OBA_Data <- read.csv("C:/Users/sarah/OneDrive/Desktop/Final/OBA_2018-2023_combined_dataset_working.csv")
+OBA <- read.csv("C:/Users/sarah/OneDrive/Desktop/DS-Final/OBA_2018-2023_combined_dataset_working.csv")
 
-print(OBA_Data)
+#I dont really know what im doing here but I am trying to clean up the data
 
-HJA_Data_plant <- read.csv("C:/Users/sarah/OneDrive/Desktop/Final/SA02602_v5.csv")
- print(HJA_Data_plant)
- 
- HJA_Data_Bee <- read.csv("C:/Users/sarah/OneDrive/Desktop/Final/SA02601_v6.csv")
+#here I laid it out so that I can see all the genus and species data on thier own so I can begin to clean it up
 
-print(HJA_Data_Bee)
+#unique(OBA$Genus)
+#unique(OBA$Species)
+
+#here I am going to try to sort out a few bees based on genus idk if that will be super helpful but its what im going to do because i have to start somewhere 
+
+
+
+
+
+#Goal here is to clean the species stuff up so that all the blank spots are gone
+
+
 ```
 
 
 ``` {r}
 
-combined_df <- as.data.frame("")
+
 
 ```
