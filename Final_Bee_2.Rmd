@@ -15,6 +15,8 @@ library(terra)
 library(ggplot2)
 library(dplyr)
 library(sf)
+library(dplyr)
+library(networkD3)
 ```
 
 
@@ -193,7 +195,7 @@ points_sf$Ecoregion <- terra::extract(rast_ecoregions, vect(points_sf), ID = FAL
 # View results
 print(points_sf)
 }
-get_region(44.0522, -123.3033, 4326)
+get_region(45.0522, -121.3033, 4326)
 ```
 ```{r}
 library(dplyr)
@@ -269,8 +271,95 @@ sankey_plots <- lapply(1:nrow(sankey_data), function(i) {
 
 # Display Sankey diagram for the first Ecoregion as an example
 sankey_plots[[1]] # Replace [1] with any index to display another Ecoregion
+sankey_plots[[2]]
+sankey_plots[[3]]
+sankey_plots[[4]]
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Example species_sf structure
+# species_sf contains columns: Ecoregion, Plant, Bee
+
+# Summarize the 5 most common bees for each ecoregion
+top_bees <- species_sf %>%
+  filter(!is.na(Bee)) %>% # Ensure no NA values
+  group_by(Ecoregion, Bee) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Summarize the 5 most common plants for each ecoregion
+top_plants <- species_sf %>%
+  filter(!is.na(Plant)) %>% # Ensure no NA values
+  group_by(Ecoregion, Plant) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Plot for bees
+bee_plots <- top_bees %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Bee, -Count), y = Count, fill = Bee)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Bees in Ecoregion:", unique(data$Ecoregion)),
+        x = "Bee",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Plot for plants
+plant_plots <- top_plants %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Plant, -Count), y = Count, fill = Plant)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Plants in Ecoregion:", unique(data$Ecoregion)),
+        x = "Plant",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Example: Display the first barplot for bees and plants
+bee_plots[[2]] # Replace [1] with other indices for different ecoregions
+plant_plots[[2]] # Replace [1] with other indices for different ecoregions
 
 ```
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Summarize the most visited plants across all regions
+top_plants_all <- species_sf %>%
+  filter(!is.na(Plant)) %>% # Ensure no NA values
+  group_by(Plant) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  slice_max(Count, n = 10, with_ties = FALSE) # Adjust 'n' for the top N plants
+
+# Create the barplot
+ggplot(top_plants_all, aes(x = reorder(Plant, -Count), y = Count, fill = Plant)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Visited Plants Across All Regions",
+    x = "Plant",
+    y = "Visit Count"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") # Hide legend since colors are redundant
+
+```
+
 
 
 
