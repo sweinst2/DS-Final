@@ -12,11 +12,7 @@ library(igraph)
 library(networkD3)
 library(stringr)
 library(terra)
-library(ggplot2)
-library(dplyr)
 library(sf)
-library(dplyr)
-library(networkD3)
 ```
 
 
@@ -374,6 +370,24 @@ ggplot(top_plants_all, aes(x = reorder(Plant, -Count), y = Count, fill = Plant))
   ) +
   theme_minimal() +
   theme(legend.position = "none") # Hide legend since colors are redundant
+
+```
+```{r}
+or <- map_data("county", "oregon") %>% 
+  select(lon = long, lat, group, id = subregion)
+library(ggspatial)
+ggplot() +
+  geom_polygon(data = or, aes(x = lon, y = lat, group = group), fill = "lightgrey", color = "black") +
+  geom_sf(data = species_sf, aes(color = Ecoregion), size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Bee Species by Ecoregions",
+    x = "Longitude",
+    y = "Latitude",
+  ) +
+  annotation_scale(location = "br", width_hint = 0.2) +
+  annotation_north_arrow(location = "tr", width = unit(.5, "in")) +
+  theme(legend.position = "none")
 
 ```
 
