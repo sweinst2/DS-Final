@@ -371,6 +371,27 @@ ggplot(top_plants_all, aes(x = reorder(Plant, -Count), y = Count, fill = Plant))
   theme_minimal() +
   theme(legend.position = "none") # Hide legend since colors are redundant
 
+
+#Summarize bees
+top_bees_all <- species_sf %>%
+  filter(!is.na(Bee)) %>% # Ensure no NA values
+  group_by(Bee) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  slice_max(Count, n = 10, with_ties = FALSE) # Adjust 'n' for the top N plants
+
+# Create the barplot
+ggplot(top_bees_all, aes(x = reorder(Bee, -Count), y = Count, fill = Bee)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Most Common Bees Across All Regions",
+    x = "Bee",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none") # Hide legend since colors are redundant
+
+
 ```
 ```{r}
 or <- map_data("county", "oregon") %>% 
