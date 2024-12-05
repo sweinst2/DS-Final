@@ -274,6 +274,10 @@ sankey_plots[[1]] # Replace [1] with any index to display another Ecoregion
 sankey_plots[[2]]
 sankey_plots[[3]]
 sankey_plots[[4]]
+sankey_plots[[5]]
+sankey_plots[[6]]
+sankey_plots[[7]]
+sankey_plots[[8]]
 ```
 ```{r}
 library(dplyr)
@@ -331,9 +335,22 @@ plant_plots <- top_plants %>%
   })
 
 # Example: Display the first barplot for bees and plants
+bee_plots[[1]] # Replace [1] with other indices for different ecoregions
+plant_plots[[1]] # Replace [1] with other indices for different ecoregions
 bee_plots[[2]] # Replace [1] with other indices for different ecoregions
-plant_plots[[2]] # Replace [1] with other indices for different ecoregions
-
+plant_plots[[2]]
+bee_plots[[3]] # Replace [1] with other indices for different ecoregions
+plant_plots[[3]]
+bee_plots[[4]] # Replace [1] with other indices for different ecoregions
+plant_plots[[4]]
+bee_plots[[5]] # Replace [1] with other indices for different ecoregions
+plant_plots[[5]]
+bee_plots[[6]] # Replace [1] with other indices for different ecoregions
+plant_plots[[6]]
+bee_plots[[7]] # Replace [1] with other indices for different ecoregions
+plant_plots[[7]]
+bee_plots[[8]] # Replace [1] with other indices for different ecoregions
+plant_plots[[8]]
 ```
 ```{r}
 library(dplyr)
