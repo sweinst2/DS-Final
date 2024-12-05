@@ -1,0 +1,174 @@
+---
+title: "Final proj"
+output: html_document
+date: "2024-12-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(igraph)
+library(networkD3)
+library(stringr)
+library(terra)
+library(ggplot2)
+library(dplyr)
+library(sf)
+```
+
+
+
+```{r}
+oba = read.csv("data/OBA_2018-2023_combined_dataset_working.csv")
+## Remove the special character
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\x92", "")
+ 
+## Remove the rows with no plant name.
+oba <- oba[oba$Associated.plant != "",]
+ 
+## Remove "net"
+oba <- oba[oba$Associated.plant != "Net",]
+ 
+## Fix yarrow
+oba$Associated.plant[oba$Associated.plant == "Yarrow"] <- "Achillea millefolium"
+ 
+## Remove a random weird one
+oba <- oba[oba$Associated.plant != "Weedy yellow comp.",]
+ 
+## Remove names in ()
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\\(.*?\\)", "")
+ 
+## Still some issues with words after commas
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, ",.*$", "")
+ 
+## Some have write space at the end of the string now
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\\s+$", "")
+ 
+## And now there are a few instances where sp doesn't have a period.
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, " sp$", " sp.")
+ 
+## Remove the or and everything after it, could also consider dropping these...
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, " or .*", "")
+ 
+sort(unique(oba$Associated.plant))[1:10]
+```
+```{r}
+# Count the number of words
+oba$plantTaxaWordCount <- str_count(oba$Associated.plant, "\\S+")
+
+# Print the first 50 elements
+print(head(oba, 50))
+```
+```{r}
+oba$GenusSpecies <- paste(oba$Genus, oba$Species)
+unique_species <- sort(unique(oba$GenusSpecies))
+print(unique_species)
+
+num_species <- length(unique_species)
+print(paste(num_species))
+
+
+```
+
+
+```{r}
+# Initialize the new column with NA
+oba$plantResolution <- NA
+
+# Loop through each row
+for (i in 1:nrow(oba)) {
+  # Check if it ends with "aceae" (family)
+  if (grepl("aceae$", oba$Associated.plant[i])) {
+    oba$plantResolution[i] <- "Family"
+  }
+  # Check if it has one word and is not a family (genus)
+  else if (str_count(oba$Associated.plant[i], "\\S+") == 1) {
+    oba$plantResolution[i] <- "Genus"
+  }
+  # Otherwise, assume it's a species or subspecies
+  else {
+    oba$plantResolution[i] <- "Species"
+  }
+}
+
+# Display the distribution of resolutions
+table(oba$plantResolution)
+```
+
+```{r}
+# Add "sp." to genus-level entries that lack it
+oba$Associated.plant <- ifelse(
+  oba$plantResolution == "Genus" & !grepl("\\ssp\\.$", oba$Associated.plant), 
+  paste0(oba$Associated.plant, " sp."), 
+  oba$Associated.plant
+)
+
+# To check that it worked
+unique(oba$Associated.plant[oba$plantResolution == "Genus"])
+```
+```{r}
+# Create the plantGenus column
+oba$plantGenus <- ifelse(
+  oba$plantResolution %in% c("Genus", "Species"),  # Check if resolved to genus or species
+  word(oba$Associated.plant, 1),                  # Extract the first word (genus)
+  NA                                              # Otherwise, assign NA
+)
+
+## To check finish with
+table(oba$plantGenus)
+```
+
+```{r}
+OBA_spacial <- oba %>%
+  filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.)) %>%
+  select(Latitude = Dec..Lat., Longitude = Dec..Long., Plant = plantGenus, Bee = GenusSpecies)
+
+colnames(OBA_spacial) <- c("Latitude", "Longitude", "Plant", "Bee")
+
+species_sf <- st_as_sf(OBA_spacial, coords = c("Longitude", "Latitude"), crs = 4326)
+print(species_sf)
+class(species_sf)
+```
+```{r}
+ecoregions <- st_read("data/OR-ecoregions/Ecoregions_OregonConservationStrategy.shp")
+```
+
+
+```{r}
+# adding ecoregion column to oba data
+template <- rast(vect(ecoregions))
+
+rast_ecoregions <- rasterize(vect(ecoregions), template, field = "Ecoregion")
+rast_ecoregions <- project(rast_ecoregions, crs(species_sf))
+ #extracts ecoregion data for every point
+species_sf$Ecoregion <- terra::extract(rast_ecoregions, species_sf, ID = FALSE)[[1]]
+
+species_sf <- species_sf %>% filter(!is.na(Ecoregion))
+
+unique(species_sf$Ecoregion)
+```
+
+```{r}
+# Example coordinate data
+coords <- data.frame(
+  Latitude = c(44.0522, 44.7783),  # Example latitudes
+  Longitude = c(-123.2437, -145.4179)  # Example longitudes
+)
+
+# Define the CRS (e.g., WGS 84)
+crs_target <- 4326  # EPSG code for WGS 84
+
+# Convert coordinates to an sf object
+points_sf <- st_as_sf(coords, coords = c("Longitude", "Latitude"), crs = crs_target)
+
+# Ensure species_sf is in the same CRS
+points_sf <- st_transform(points_sf, crs = st_crs(species_sf))
+
+# Extract ecoregion using species_sf
+points_sf$Ecoregion <- terra::extract(rast_ecoregions, vect(points_sf), ID = FALSE)[[1]]
+
+# View results
+print(points_sf)
+```
+
