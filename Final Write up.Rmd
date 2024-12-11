@@ -1,0 +1,24 @@
+---
+title: "Final Writeup"
+author: "Sarah Weinstein"
+date: "2024-12-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(igraph)
+library(networkD3)
+library(stringr)
+library(terra)
+library(sf)
+```
+
+Introduction:
+
+For our project we intended to create a tool that would help farmers integrate native plants into their crops in order to increase the pollinator density of the area. As we saw in out research that increasing the native plant population in ones crops will lead to an increase in pollinator density(Rao, et al ) We also saw the power of bees in how they can help to spread the growth of plants through pollination as seen with the invasive star thistle(Mciver et al. 2009) Looking at this we can see that having a strong pollinator population is very important to maintain healthy crops and to increase the biodiversity. The interactions between plants and pollinators can help us to learn a lot about the environment that they take place in as we can what plants are favored and which ones are overlooked, as well as seeing what plants bring which bees out. 
+
+Questions:
+
+- What plant is mo
