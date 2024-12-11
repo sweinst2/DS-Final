@@ -81,7 +81,7 @@ oba$plantTaxaWordCount <- str_count(oba$Associated.plant, "\\S+")
 print(head(oba, 50))
 ```
 
-
+Creating new columns for genus and species for both plants and bees, to be condensed later
 ```{r}
 oba$GenusSpecies <- paste(oba$Genus, oba$Species)
 unique_species <- sort(unique(oba$GenusSpecies))
@@ -137,6 +137,7 @@ oba$Associated.plant <- ifelse(
 # To check that it worked
 unique(oba$Associated.plant[oba$plantResolution == "Genus"])
 ```
+Creates columns in oba with plants filtered down to genus and bees to genus and species
 ```{r}
 # Create the plantGenus column
 oba$plantGenus <- ifelse(
@@ -157,7 +158,7 @@ oba$beeGenus <- ifelse(
 table(oba$beeGenus)
 ```
 
-ecoregion data
+Creates a spacial object from oba data
 ```{r}
 OBA_spacial <- oba %>%
   filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.) & !is.na(beeGenus)) %>%
@@ -172,7 +173,7 @@ class(species_sf)
 ```{r}
 ecoregions <- st_read("data/OR-ecoregions/Ecoregions_OregonConservationStrategy.shp")
 ```
-
+Creates a column in oba for ecoregion
 ```{r}
 # adding ecoregion column to oba data
 template <- rast(vect(ecoregions))
@@ -332,20 +333,20 @@ plant_plots <- top_plants %>%
 
 # Example: Display the first barplot for bees and plants
 bee_plots[[1]] # Replace [1] with other indices for different ecoregions
-plant_plots[[1]] # Replace [1] with other indices for different ecoregions
-bee_plots[[2]] # Replace [1] with other indices for different ecoregions
+plant_plots[[1]]
+bee_plots[[2]]
 plant_plots[[2]]
-bee_plots[[3]] # Replace [1] with other indices for different ecoregions
+bee_plots[[3]] 
 plant_plots[[3]]
-bee_plots[[4]] # Replace [1] with other indices for different ecoregions
+bee_plots[[4]] 
 plant_plots[[4]]
-bee_plots[[5]] # Replace [1] with other indices for different ecoregions
+bee_plots[[5]] 
 plant_plots[[5]]
-bee_plots[[6]] # Replace [1] with other indices for different ecoregions
+bee_plots[[6]]
 plant_plots[[6]]
-bee_plots[[7]] # Replace [1] with other indices for different ecoregions
+bee_plots[[7]] 
 plant_plots[[7]]
-bee_plots[[8]] # Replace [1] with other indices for different ecoregions
+bee_plots[[8]] 
 plant_plots[[8]]
 ```
 
