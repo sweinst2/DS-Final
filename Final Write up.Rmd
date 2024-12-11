@@ -4,7 +4,7 @@ author: "Sarah Weinstein"
 date: "2024-12-11"
 output: html_document
 ---
-Hello Lucas! I am going to assume you pulled the file and can see this. I am struggling with where species sf is so that is one thing I would love it if you can fix and just make sure that everything I put in here is in the right order and stuff. when you have everything done push it and I will pull and double chekc that it runs properly and the I will knit it and submit it. Text me when you get alll that fun stuff done. also you can delete this.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -125,6 +125,36 @@ for (i in 1:nrow(oba)) {
 table(oba$beeResolution)
 # Display the distribution of resolutions
 table(oba$plantResolution)
+```
+```{r}
+# Add "sp." to genus-level entries that lack it
+oba$Associated.plant <- ifelse(
+  oba$plantResolution == "Genus" & !grepl("\\ssp\\.$", oba$Associated.plant), 
+  paste0(oba$Associated.plant, " sp."), 
+  oba$Associated.plant
+)
+
+# To check that it worked
+unique(oba$Associated.plant[oba$plantResolution == "Genus"])
+```
+```{r}
+# Create the plantGenus column
+oba$plantGenus <- ifelse(
+  oba$plantResolution %in% c("Genus", "Species"),  # Check if resolved to genus or species
+  word(oba$Associated.plant, 1),                  # Extract the first word (genus)
+  NA                                              # Otherwise, assign NA
+)
+
+## To check finish with
+table(oba$plantGenus)
+# Create the beeGenus column
+oba$beeGenus <- ifelse(
+  oba$beeResolution %in% c("Genus", "Species") & str_count(oba$GenusSpecies, "\\S+") > 1, # Check resolution and word count
+  word(oba$GenusSpecies, 1, 2),  # Extract the first two words
+  NA  # Assign NA if resolution doesn't match or only one word is present
+)
+## To check finish with
+table(oba$beeGenus)
 ```
 
 ecoregion data
