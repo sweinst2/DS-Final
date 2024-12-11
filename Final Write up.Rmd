@@ -4,8 +4,7 @@ author: "Sarah Weinstein"
 date: "2024-12-11"
 output: html_document
 ---
-Hello Lucas! I am going to assume you pulled the file and can see this. I am struggling with where species sf is so that is one thing I would love it if you can fix and just make sure that everything I put in here is in the right order and stuff. when you have everything done push it and I will pull and double chekc that it runs properly and the I will knit it and submit it. Text me when you get alll that fun stuff done. also you can delete this. 
-
+Hello Lucas! I am going to assume you pulled the file and can see this. I am struggling with where species sf is so that is one thing I would love it if you can fix and just make sure that everything I put in here is in the right order and stuff. when you have everything done push it and I will pull and double chekc that it runs properly and the I will knit it and submit it. Text me when you get alll that fun stuff done. also you can delete this.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -346,89 +345,17 @@ ggplot() +
 
 
 
+Conclusion:
+
+The main conclusion that I believe we have come to is that the inclusion of attractive native plants into farming regions will help to boost the pollinator density of said area. This can be done even more so by finding out which plants are most attractive for the ecoregion you are in. With the ability to analyze the area with the tool that we created farmers will be able to see what types of bees are found in the area they are planting their crops and build hedgerows that are specifically suited for the bees in their area. This will help to increase the species richness of the region and begin to create a happy environment. 
+
+This tool can also be used by the average person who wants to increase the pollinator diversity of their at home garden.The biggest drawback that I can find would be that there may be dependencies in regional data collected due to this being a  citizen scientist project. That is the biggest limitation that one can see. For us personally the biggest limitation was that we do not really have a testable hypothesis because we were building a tool rather than testing something. But overall the results that were yielded show a trend in bee species and plants visited per ecoregion and upon doing some deeper digging there is much more that can be learned. 
 
 
+Refrences:
+- MCIVER, J., THORP, R., & ERICKSON, K. (2009). Pollinators of the invasive plant, yellow starthistle (Centaurea solstitialis), in north-eastern Oregon, USA. Weed Biology and Management, 9(2), 137–145. https://doi.org/10.1111/j.1445-6664.2009.00331.x
 
+-Rao, S., & Stephen, W. P. (2010). Abundance and Diversity of Native Bumble Bees Associated with Agricultural Crops: The Willamette Valley Experience. Psyche: A Journal of Entomology, 2010, 1–9. https://doi.org/10.1155/2010/354072
 
+-Zitomer, R. A., Galbraith, S. M., Betts, M. G., Moldenke, A. R., Progar, R. A., & Rivers, J. W. (2023). Bee diversity decreases rapidly with time since harvest in intensively managed conifer forests. Ecological Applications, 33(5). https://doi.org/10.1002/eap.2855
 
-
-
-
-
-
-
-Visualization:
-```{r}
-
-#what we did here was we created graphs that show the top bees and plants visited per ecooregin and made bar graphs of them 
-library(dplyr)
-library(ggplot2)
-# Example species_sf structure
-# species_sf contains columns: Ecoregion, Plant, Bee
-
-# Summarize the 5 most common bees for each ecoregion
-top_bees <- species_sf %>%
-  filter(!is.na(Bee)) %>% # Ensure no NA values
-  group_by(Ecoregion, Bee) %>%
-  summarise(Count = n(), .groups = "drop") %>%
-  group_by(Ecoregion) %>%
-  slice_max(Count, n = 5, with_ties = FALSE) %>%
-  ungroup()
-
-# Summarize the 5 most common plants for each ecoregion
-top_plants <- species_sf %>%
-  filter(!is.na(Plant)) %>% # Ensure no NA values
-  group_by(Ecoregion, Plant) %>%
-  summarise(Count = n(), .groups = "drop") %>%
-  group_by(Ecoregion) %>%
-  slice_max(Count, n = 5, with_ties = FALSE) %>%
-  ungroup()
-
-# Plot for bees
-bee_plots <- top_bees %>%
-  group_split(Ecoregion) %>%
-  lapply(function(data) {
-    ggplot(data, aes(x = reorder(Bee, -Count), y = Count, fill = Bee)) +
-      geom_bar(stat = "identity") +
-      coord_flip() +
-      labs(
-        title = paste("Top 5 Bees in Ecoregion:", unique(data$Ecoregion)),
-        x = "Bee",
-        y = "Count"
-      ) +
-      theme_minimal()
-  })
-
-# Plot for plants
-plant_plots <- top_plants %>%
-  group_split(Ecoregion) %>%
-  lapply(function(data) {
-    ggplot(data, aes(x = reorder(Plant, -Count), y = Count, fill = Plant)) +
-      geom_bar(stat = "identity") +
-      coord_flip() +
-      labs(
-        title = paste("Top 5 Plants in Ecoregion:", unique(data$Ecoregion)),
-        x = "Plant",
-        y = "Count"
-      ) +
-      theme_minimal()
-  })
-
-# Example: Display the first barplot for bees and plants
-bee_plots[[1]] # Replace [1] with other indices for different ecoregions
-plant_plots[[1]] # Replace [1] with other indices for different ecoregions
-bee_plots[[2]] # Replace [1] with other indices for different ecoregions
-plant_plots[[2]]
-bee_plots[[3]] # Replace [1] with other indices for different ecoregions
-plant_plots[[3]]
-bee_plots[[4]] # Replace [1] with other indices for different ecoregions
-plant_plots[[4]]
-bee_plots[[5]] # Replace [1] with other indices for different ecoregions
-plant_plots[[5]]
-bee_plots[[6]] # Replace [1] with other indices for different ecoregions
-plant_plots[[6]]
-bee_plots[[7]] # Replace [1] with other indices for different ecoregions
-plant_plots[[7]]
-bee_plots[[8]] # Replace [1] with other indices for different ecoregions
-plant_plots[[8]]
-```
