@@ -15,7 +15,7 @@ library(terra)
 library(sf)
 ```
 
-Introduction:
+1. Introduction:
 
 For our project we intended to create a tool that would help farmers integrate native plants into their crops in order to increase the pollinator density of the area. As we saw in out research that increasing the native plant population in ones crops will lead to an increase in pollinator density(Rao, et al ) We also saw the power of bees in how they can help to spread the growth of plants through pollination as seen with the invasive star thistle(Mciver et al. 2009) Looking at this we can see that having a strong pollinator population is very important to maintain healthy crops and to increase the biodiversity. The interactions between plants and pollinators can help us to learn a lot about the environment that they take place in as we can what plants are favored and which ones are overlooked, as well as seeing what plants bring which bees out. 
 
@@ -26,3 +26,67 @@ Questions:
   
 - What importance does the integration of native plants play in the developing of a healthy and bio diverse cropland?
   * There was really no hypothesis here rather a straight forward answer. It is extremely important as having a biodiverse cropland rich with native plants will encourage pollinators to visit such plants and increase the health of the region. 
+
+
+Hypothesis: 
+for our project we did not really have a hypothesis to test so I am unsure as to what we can do for that aspect of the project. 
+
+2.Data
+
+1) OBA data Spatial data
+2) OBA data Network
+3) Oregon Ecoregion Data
+
+
+Tidying the data:
+```{r}
+oba = read.csv("data/OBA_2018-2023_combined_dataset_working.csv")
+## Remove the special character
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\x92", "")
+ 
+## Remove the rows with no plant name.
+oba <- oba[oba$Associated.plant != "",]
+ 
+## Remove "net"
+oba <- oba[oba$Associated.plant != "Net",]
+ 
+## Fix yarrow
+oba$Associated.plant[oba$Associated.plant == "Yarrow"] <- "Achillea millefolium"
+ 
+## Remove a random weird one
+oba <- oba[oba$Associated.plant != "Weedy yellow comp.",]
+ 
+## Remove names in ()
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\\(.*?\\)", "")
+ 
+## Still some issues with words after commas
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, ",.*$", "")
+ 
+## Some have write space at the end of the string now
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, "\\s+$", "")
+ 
+## And now there are a few instances where sp doesn't have a period.
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, " sp$", " sp.")
+ 
+## Remove the or and everything after it, could also consider dropping these...
+oba$Associated.plant <- str_replace_all(oba$Associated.plant, " or .*", "")
+ 
+sort(unique(oba$Associated.plant))[1:10]
+```
+```{r}
+# Count the number of words
+oba$plantTaxaWordCount <- str_count(oba$Associated.plant, "\\S+")
+
+# Print the first 50 elements
+print(head(oba, 50))
+```
+```{r}
+oba$GenusSpecies <- paste(oba$Genus, oba$Species)
+unique_species <- sort(unique(oba$GenusSpecies))
+print(unique_species)
+
+num_species <- length(unique_species)
+print(paste(num_species))
+
+
+```
