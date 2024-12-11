@@ -80,6 +80,8 @@ oba$plantTaxaWordCount <- str_count(oba$Associated.plant, "\\S+")
 # Print the first 50 elements
 print(head(oba, 50))
 ```
+
+
 ```{r}
 oba$GenusSpecies <- paste(oba$Genus, oba$Species)
 unique_species <- sort(unique(oba$GenusSpecies))
@@ -88,5 +90,344 @@ print(unique_species)
 num_species <- length(unique_species)
 print(paste(num_species))
 
+# Initialize the new column with NA
+oba$plantResolution <- NA
+oba$beeResolution <- NA
+# Loop through each row
+for (i in 1:nrow(oba)) {
+  # Check if it ends with "aceae" (family)
+  if (grepl("aceae$", oba$Associated.plant[i])) {
+    oba$plantResolution[i] <- "Family"
+  }
+  # Check if it has one word and is not a family (genus)
+  else if (str_count(oba$Associated.plant[i], "\\S+") == 1) {
+    oba$plantResolution[i] <- "Genus"
+  }
+  # Otherwise, assume it's a species or subspecies
+  else {
+    oba$plantResolution[i] <- "Species"
+  }
+}
 
+# Loop through each row
+for (i in 1:nrow(oba)) {
+  # Check if it has one word and is not a family (genus)
+  if (str_count(oba$GenusSpecies[i], "\\S+") == 1) {
+    oba$beeResolution[i] <- "Genus"
+  }
+  # Otherwise, assume it's a species or subspecies
+  else {
+    oba$beeResolution[i] <- "Species"
+  }
+}
+
+# Display the distribution of resolutions
+table(oba$beeResolution)
+# Display the distribution of resolutions
+table(oba$plantResolution)
+```
+
+ecoregion data
+```{r}
+OBA_spacial <- oba %>%
+  filter(!is.na(Dec..Lat.) & !is.na(Dec..Long.) & !is.na(beeGenus)) %>%
+  select(Latitude = Dec..Lat., Longitude = Dec..Long., Plant = plantGenus, Bee = beeGenus)
+
+colnames(OBA_spacial) <- c("Latitude", "Longitude", "Plant", "Bee")
+
+species_sf <- st_as_sf(OBA_spacial, coords = c("Longitude", "Latitude"), crs = 4326)
+print(species_sf)
+class(species_sf)
+```
+```{r}
+ecoregions <- st_read("data/OR-ecoregions/Ecoregions_OregonConservationStrategy.shp")
+```
+
+```{r}
+# adding ecoregion column to oba data
+template <- rast(vect(ecoregions))
+
+rast_ecoregions <- rasterize(vect(ecoregions), template, field = "Ecoregion")
+rast_ecoregions <- project(rast_ecoregions, crs(species_sf))
+ #extracts ecoregion data for every point
+species_sf$Ecoregion <- terra::extract(rast_ecoregions, species_sf, ID = FALSE)[[1]]
+
+species_sf <- species_sf %>% filter(!is.na(Ecoregion))
+
+unique(species_sf$Ecoregion)
+```
+
+
+Visualization:
+
+Sankey plots 
+```{r}
+library(dplyr)
+library(igraph)
+
+# Example species_sf structure
+# species_sf contains columns: Ecoregion, Plant, Bee
+# Example structure: species_sf <- data.frame(Ecoregion, Plant, Bee)
+
+# Group by Ecoregion and create edge lists
+edge_lists <- species_sf %>%
+  filter(!is.na(Plant), !is.na(Bee)) %>% # Ensure no NA values
+  group_by(Ecoregion) %>%
+  summarise(edges = list(data.frame(Plant, Bee)), .groups = "drop")
+
+# Create a network for each Ecoregion
+networks <- lapply(edge_lists$edges, function(edges) {
+  graph_from_data_frame(edges, directed = FALSE)
+})
+
+# Name networks by Ecoregion
+names(networks) <- edge_lists$Ecoregion
+
+# Example: Analyze or plot the network for a specific Ecoregion
+plot(networks[[1]], main = paste("Network for Ecoregion:", names(networks)[1]))
+
+```
+```{r}
+library(dplyr)
+library(networkD3)
+
+# Group by Ecoregion and prepare Sankey input
+sankey_data <- species_sf %>%
+  filter(!is.na(Plant), !is.na(Bee)) %>% # Remove rows with NA values
+  group_by(Ecoregion) %>%
+  summarise(
+    nodes = list(unique(c(Plant, Bee))), # Combine unique nodes (Plants and Bees)
+    links = list(data.frame(source = Plant, target = Bee)), # Create links
+    .groups = "drop"
+  )
+
+# Create and display Sankey diagrams for each Ecoregion
+sankey_plots <- lapply(1:nrow(sankey_data), function(i) {
+  # Extract nodes and links
+  ecoregion <- sankey_data$Ecoregion[i]
+  node_list <- unique(c(sankey_data$nodes[[i]]))
+  link_df <- sankey_data$links[[i]]
+
+  # Create node data frame with indices
+  nodes <- data.frame(name = node_list)
+
+  # Convert links to indices and add a Value column
+  links <- link_df %>%
+    mutate(
+      source = match(source, nodes$name) - 1, # Convert to zero-based index
+      target = match(target, nodes$name) - 1,
+      value = 1 # Assign a default value of 1 for all links
+    )
+
+  # Create Sankey diagram
+  sankeyNetwork(
+    Links = links,
+    Nodes = nodes,
+    Source = "source",
+    Target = "target",
+    Value = "value", # Use the Value column created above
+    NodeID = "name",
+    units = "Interactions",
+    fontSize = 12,
+    nodeWidth = 30
+  )
+})
+
+# Display Sankey diagram for the first Ecoregion as an example
+sankey_plots[[1]] # Replace [1] with any index to display another Ecoregion
+sankey_plots[[2]]
+sankey_plots[[3]]
+sankey_plots[[4]]
+sankey_plots[[5]]
+sankey_plots[[6]]
+sankey_plots[[7]]
+sankey_plots[[8]]
+```
+
+Plant Pollinator plots 
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Example species_sf structure
+# species_sf contains columns: Ecoregion, Plant, Bee
+
+# Summarize the 5 most common bees for each ecoregion
+top_bees <- species_sf %>%
+  filter(!is.na(Bee)) %>% # Ensure no NA values
+  group_by(Ecoregion, Bee) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Summarize the 5 most common plants for each ecoregion
+top_plants <- species_sf %>%
+  filter(!is.na(Plant)) %>% # Ensure no NA values
+  group_by(Ecoregion, Plant) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Plot for bees
+bee_plots <- top_bees %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Bee, -Count), y = Count, fill = Bee)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Bees in Ecoregion:", unique(data$Ecoregion)),
+        x = "Bee",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Plot for plants
+plant_plots <- top_plants %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Plant, -Count), y = Count, fill = Plant)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Plants in Ecoregion:", unique(data$Ecoregion)),
+        x = "Plant",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Example: Display the first barplot for bees and plants
+bee_plots[[1]] # Replace [1] with other indices for different ecoregions
+plant_plots[[1]] # Replace [1] with other indices for different ecoregions
+bee_plots[[2]] # Replace [1] with other indices for different ecoregions
+plant_plots[[2]]
+bee_plots[[3]] # Replace [1] with other indices for different ecoregions
+plant_plots[[3]]
+bee_plots[[4]] # Replace [1] with other indices for different ecoregions
+plant_plots[[4]]
+bee_plots[[5]] # Replace [1] with other indices for different ecoregions
+plant_plots[[5]]
+bee_plots[[6]] # Replace [1] with other indices for different ecoregions
+plant_plots[[6]]
+bee_plots[[7]] # Replace [1] with other indices for different ecoregions
+plant_plots[[7]]
+bee_plots[[8]] # Replace [1] with other indices for different ecoregions
+plant_plots[[8]]
+```
+
+
+Map
+```{r}
+or <- map_data("county", "oregon") %>% 
+  select(lon = long, lat, group, id = subregion)
+library(ggspatial)
+ggplot() +
+  geom_polygon(data = or, aes(x = lon, y = lat, group = group), fill = "lightgrey", color = "black") +
+  geom_sf(data = species_sf, aes(color = Ecoregion), size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Bee Species by Ecoregions",
+    x = "Longitude",
+    y = "Latitude",
+  ) +
+  annotation_scale(location = "br", width_hint = 0.2) +
+  annotation_north_arrow(location = "tr", width = unit(.5, "in")) +
+  theme(legend.position = "none")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Visualization:
+```{r}
+
+#what we did here was we created graphs that show the top bees and plants visited per ecooregin and made bar graphs of them 
+library(dplyr)
+library(ggplot2)
+# Example species_sf structure
+# species_sf contains columns: Ecoregion, Plant, Bee
+
+# Summarize the 5 most common bees for each ecoregion
+top_bees <- species_sf %>%
+  filter(!is.na(Bee)) %>% # Ensure no NA values
+  group_by(Ecoregion, Bee) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Summarize the 5 most common plants for each ecoregion
+top_plants <- species_sf %>%
+  filter(!is.na(Plant)) %>% # Ensure no NA values
+  group_by(Ecoregion, Plant) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  group_by(Ecoregion) %>%
+  slice_max(Count, n = 5, with_ties = FALSE) %>%
+  ungroup()
+
+# Plot for bees
+bee_plots <- top_bees %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Bee, -Count), y = Count, fill = Bee)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Bees in Ecoregion:", unique(data$Ecoregion)),
+        x = "Bee",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Plot for plants
+plant_plots <- top_plants %>%
+  group_split(Ecoregion) %>%
+  lapply(function(data) {
+    ggplot(data, aes(x = reorder(Plant, -Count), y = Count, fill = Plant)) +
+      geom_bar(stat = "identity") +
+      coord_flip() +
+      labs(
+        title = paste("Top 5 Plants in Ecoregion:", unique(data$Ecoregion)),
+        x = "Plant",
+        y = "Count"
+      ) +
+      theme_minimal()
+  })
+
+# Example: Display the first barplot for bees and plants
+bee_plots[[1]] # Replace [1] with other indices for different ecoregions
+plant_plots[[1]] # Replace [1] with other indices for different ecoregions
+bee_plots[[2]] # Replace [1] with other indices for different ecoregions
+plant_plots[[2]]
+bee_plots[[3]] # Replace [1] with other indices for different ecoregions
+plant_plots[[3]]
+bee_plots[[4]] # Replace [1] with other indices for different ecoregions
+plant_plots[[4]]
+bee_plots[[5]] # Replace [1] with other indices for different ecoregions
+plant_plots[[5]]
+bee_plots[[6]] # Replace [1] with other indices for different ecoregions
+plant_plots[[6]]
+bee_plots[[7]] # Replace [1] with other indices for different ecoregions
+plant_plots[[7]]
+bee_plots[[8]] # Replace [1] with other indices for different ecoregions
+plant_plots[[8]]
 ```
