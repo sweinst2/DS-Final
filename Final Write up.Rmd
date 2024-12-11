@@ -4,6 +4,7 @@ author: "Sarah Weinstein"
 date: "2024-12-11"
 output: html_document
 ---
+Hello Lucas! I am going to assume you pulled the file and can see this. I am struggling with where species sf is so that is one thing I would love it if you can fix and just make sure that everything I put in here is in the right order and stuff. when you have everything done push it and I will pull and double chekc that it runs properly and the I will knit it and submit it. Text me when you get alll that fun stuff done. also you can delete this. 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
