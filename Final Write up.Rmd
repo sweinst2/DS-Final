@@ -21,4 +21,8 @@ For our project we intended to create a tool that would help farmers integrate n
 
 Questions:
 
-- What plant is mo
+- Which plant per ecoregion is the most visited?
+  * I did not really have any hypothesis for this as I was not sure what plants were preset in each ecoregion but I did hypothesize that the most visited plant would be a native plant. 
+  
+- What importance does the integration of native plants play in the developing of a healthy and bio diverse cropland?
+  * There was really no hypothesis here rather a straight forward answer. It is extremely important as having a biodiverse cropland rich with native plants will encourage pollinators to visit such plants and increase the health of the region. 
